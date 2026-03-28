@@ -6,7 +6,6 @@
 int main() {
     struct dirent *entry;
     DIR* dirFile = opendir("/dev/pcgconfigs");
-    // Buraya listeleme fonksiyonu gelecek.
 printf("----------------------------------------\n");
 printf("----- MAUVYD Configuration Startup -----\n");
 printf("-------------Listing Files..------------\n");

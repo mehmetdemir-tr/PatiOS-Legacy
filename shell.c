@@ -116,7 +116,7 @@ int main(void) {
                 perror("fork basarisiz");
             }
         }
-        else if (strcmp(komut, "2048") == 0) {
+        else if (strcmp(komut, "2048") == 0) { // -- Buglı, Sonra Fixleyeceğim
             pid_t two_pid = fork();
             if (two_pid == 0) {
                 setenv("TERMINFO", "/usr/lib/terminfo", 1);
@@ -125,7 +125,6 @@ int main(void) {
                 execv("/bin/2048", args);
             } else if (two_pid > 0) {
                 wait(NULL);
-                system("reset");
             } else {
                 printf("fork hatası!\n");
             }

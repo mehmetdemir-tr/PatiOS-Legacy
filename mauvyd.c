@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#include "pati-headers/pcg.h"
 
 int main() {
     struct dirent *entry;
@@ -94,44 +95,20 @@ for (int i = 0; i < n; i++) {
       usleep(10000);
       printf("Found: %s\n", entry->d_name);
       char tamyol[512];
-      char dosya[256];
-      char ofile[256];
       snprintf(tamyol, sizeof(tamyol), "/dev/pcgconfigs/%s", entry->d_name);
-      FILE* pcgfile = fopen(tamyol, "r");
-      if (pcgfile == NULL) {
-        printf("Dosya bombos! atlaniyor..");
-        continue;
-        }
     char dosyayolu[256] = {0};
+    char bekle_val[16] = {0};
+    char izle_val[16] = {0};
+    pcg_read(tamyol, "konumu", dosyayolu, sizeof(dosyayolu));
+    pcg_read(tamyol, "bekle", bekle_val, sizeof(bekle_val));
+    pcg_read(tamyol, "izle", izle_val, sizeof(izle_val));
     char *args[] = {NULL, NULL};
-    int bekle = 0;
-    int izle = 0;
-    while (fgets(dosya, 256, pcgfile) != NULL) {
-            char kopya[256];
-            strcpy(kopya, dosya);
-            char *okuyucu = strtok(kopya, " =");
-            if (okuyucu == NULL) continue;
-            // char *okuyucu = strtok(dosya, " ="); 
-            if (strcmp(okuyucu, "konumu") == 0) {
-                char *gecici = strtok(NULL, " =");
-                if (gecici != NULL) {
-                    strncpy(dosyayolu, gecici, sizeof(dosyayolu)-1);
-                    dosyayolu[sizeof(dosyayolu) - 1] = '\0';
-                }
-                args[0] = dosyayolu;
-                dosyayolu[strcspn(dosyayolu, "\n")] = 0;
-                printf("%s\n", dosyayolu);
-            }
+    args[0] = dosyayolu;
+    int bekle = (strcmp(bekle_val, "1") == 0);
+    int izle = (strcmp(izle_val, "1") == 0);
+        if (izle) printf("[INFO] %s Karabas tarafindan izlenecek\n", dosyayolu);
 
-            if (strcmp(okuyucu, "bekle") == 0) {
-                bekle = 1;
-            }
 
-            if (strcmp(okuyucu, "izle") == 0) {
-                izle = 1;
-            }
-      };
-      fclose(pcgfile);
       pid = fork(); // ÇATALLAMA ZAMANII!
 
     if (pid == -1) {

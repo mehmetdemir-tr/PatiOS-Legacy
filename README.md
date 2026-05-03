@@ -27,9 +27,37 @@ Bu proje **GPL v3** lisansı ile yayınlanmıştır.
 *   Proje kapalı kaynak kodlu hale getirilemez.
 
 ### FORK!
-![Selam](https://github.com/mehmetdemir-tr/Pati/blob/main/fork.png)
+[![Selam](https://github.com/mehmetdemir-tr/Pati/blob/main/fork.png)](https://github.com/mehmetdemir-tr/Pati/blob/8bd59d9685159772e44c2c7908655ed7d09d18a9/screenshots/fork.png)
+
 ---
 *Geliştirici: [mehmetdemir-tr](https://github.com/mehmetdemir-tr)*.
 ---
+## Ekran Görüntüleri:
+![Pati Shell](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/genel.jpeg)
+
+*Pati Shell — Ana kabuk arayüzü*
+
+![Yardım](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/yardim.jpeg)
+
+*`yardim` komutu — Tüm yerleşik komutlar*
+
+![Patifetch](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/patifetch.jpeg)
+
+*`patifetch` — Sistem bilgi aracı*
+
+![Patifetch](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/mamakabi.jpeg)
+
+*`mamakabi` — RAM bilgisi*
+
+![2048](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/2048.jpeg)
+
+*2048 oyunu*
+
+![Vilez](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/vilez.jpeg)
+
+*ASCII art easter egg*
+
+
+
 ## Rozetler
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)![Language: C](https://img.shields.io/badge/Language-C-A8B9CC.svg)![GitHub release (latest by date)](https://img.shields.io/github/v/release/mehmetdemir-tr/Pati)![GitHub stars](https://img.shields.io/github/stars/mehmetdemir-tr/Pati?style=social)![GitHub forks](https://img.shields.io/github/forks/mehmetdemir-tr/Pati?style=social) ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/mehmetdemir-tr/Pati) ![AI Assisted: Claude Protocol](https://img.shields.io/badge/AI_Assisted-Claude_Protocol-orange)

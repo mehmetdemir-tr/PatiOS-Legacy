@@ -20,25 +20,31 @@ int main(void) {
         char girdi[256];
         fgets(girdi, 256, stdin);
         girdi[strcspn(girdi, "\n")] = 0;
-        char *komut = strtok(girdi, " ");
-        if (komut == NULL) {
+        char *argv[64];
+        int argc = 0;
+        char *token = strtok(girdi, " ");
+        while (token && argc < 63) {
+            argv[argc++] = token;
+            token = strtok(NULL, " ");
+        }
+        argv[argc] = NULL;
+        if (argc == 0) {
             continue;
         }
-        char *arguman = strtok(NULL, " ");
 
-        if (strcmp(komut, "pati") == 0) {
+        if (strcmp(argv[0], "pati") == 0) {
             printf("Miyavv!\n");
         }
-        else if (strcmp(komut, "miyav") == 0) {
-            if (arguman == NULL) {
+        else if (strcmp(argv[0], "miyav") == 0) {
+            if (argv[1] == NULL) {
                 printf("Kullanim: miyav <adres>\n");
                 continue;
             }
 
             struct addrinfo *sonuc;
-            int ret = getaddrinfo(arguman, NULL, NULL, &sonuc);
+            int ret = getaddrinfo(argv[1], NULL, NULL, &sonuc);
             if (ret != 0) {
-                printf("miyav: adres cozumlenemedi: %s\n", arguman);
+                printf("miyav: adres cozumlenemedi: %s\n", argv[1]);
                 continue;
             }
 
@@ -59,27 +65,27 @@ int main(void) {
             hedef.sin_addr = ((struct sockaddr_in *)sonuc->ai_addr)->sin_addr;
 
             if (connect(soket, (struct sockaddr *)&hedef, sizeof(hedef)) == 0) {
-                printf("miyav: %s ulasilabilir, kedy mutlu! :)\n", arguman);
+                printf("miyav: %s ulasilabilir, kedy mutlu! :)\n", argv[1]);
             } else {
-                printf("miyav: %s cevap vermiyor... kedy uzgun :(\n", arguman);
+                printf("miyav: %s cevap vermiyor... kedy uzgun :(\n", argv[1]);
             }
 
             close(soket);
             freeaddrinfo(sonuc);
         }
-        else if (strcmp(komut, "temizle") == 0) {
+        else if (strcmp(argv[0], "temizle") == 0) {
             for (int i = 0; i < 50; i++) {
                 printf("\n");
             }
             printf("Ekran Gumletildi!\n");
         }
-        else if (strcmp(komut, "ls") == 0) {
+        else if (strcmp(argv[0], "ls") == 0) {
             struct dirent *entry;
             DIR *dirFile;
-            if (arguman == NULL) {
+            if (argv[1] == NULL) {
                 dirFile = opendir(".");
             } else {
-                dirFile = opendir(arguman);
+                dirFile = opendir(argv[1]);
             }
             if (dirFile == NULL) {
                 perror("Dizin yok veya acilamadi");
@@ -91,34 +97,34 @@ int main(void) {
             closedir(dirFile);
             printf("\n");
         }
-        else if (strcmp(komut, "uname") == 0) {
+        else if (strcmp(argv[0], "yapimci") == 0) {
             printf("Pati-1.0 by Mehmet Demir. Kod adi: Cilek (Strawberry)\n");
         }
-        else if (strcmp(komut, "touch") == 0) {
-            if (arguman == NULL) {
+        else if (strcmp(argv[0], "touch") == 0) {
+            if (argv[1] == NULL) {
                 printf("Kullanim: touch <dosya_adi>\n");
                 continue;
             }
-            int fd = creat(arguman, 0644);
+            int fd = creat(argv[1], 0644);
             if (fd != -1) {
-                printf("Dosya olusturuldu: %s\n", arguman);
+                printf("Dosya olusturuldu: %s\n", argv[1]);
                 close(fd);
                 sync();
             } else {
                 perror("touch hatasi");
             }
         }
-        else if (strcmp(komut, "cikis") == 0) {
+        else if (strcmp(argv[0], "cikis") == 0) {
             sync();
             reboot(RB_POWER_OFF);
         }
-        else if (strcmp(komut, "cat") == 0) {
+        else if (strcmp(argv[0], "cat") == 0) {
             char girdi1[256];
-            if (arguman == NULL) {
+            if (argv[1] == NULL) {
                 printf("Kullanim: cat <dosya>\n");
                 continue;
             }
-            FILE *ofile = fopen(arguman, "r");
+            FILE *ofile = fopen(argv[1], "r");
             if (ofile == NULL) {
                 printf("Acmaya calistigin dosya bombos? Kalbin gibi :)\n");
                 continue;
@@ -129,7 +135,7 @@ int main(void) {
             fclose(ofile);
             printf("\n");
         }
-        else if (strcmp(komut, "acil-durum") == 0) {
+        else if (strcmp(argv[0], "acil-durum") == 0) {
             printf("\n\n");
             printf("                                                 Acil Yeniden Baslatma Protokolu\n");
             printf("                                        Bu komut/buton'u sadece acil durumlarda\n");
@@ -145,7 +151,7 @@ int main(void) {
                 printf("Acil yeniden baslatma iptal edildi.\n");
         }
     }
-        else if (strcmp(komut, "mamakabi") == 0) {
+        else if (strcmp(argv[0], "mamakabi") == 0) {
             char girdi1[256];
             FILE *ofile = fopen("/proc/meminfo", "r");
             if (ofile == NULL) {
@@ -158,7 +164,7 @@ int main(void) {
             fclose(ofile);
             printf("\n");
         }
-        else if (strcmp(komut, "libreturks") == 0) {
+        else if (strcmp(argv[0], "libreturks") == 0) {
             printf("########=--:--=+=---:::::::--:-::::::::::::::::::::::::--:::::::::::--:---\n");
             printf("########=--::-=++---------------------::::::::::::::::::::::::::::::----:::\n");
             printf("########+--::--+=-----------------------::-::::::::::::::::::::::::::::::::\n");
@@ -203,10 +209,10 @@ int main(void) {
             fflush(stdout);
             printf("\nYaHnI oLaN vArMi?\n");
         }
-        else if (strcmp(komut, "psc") == 0) {
+        else if (strcmp(argv[0], "psc") == 0) {
             char *psc_args[3] = {"/pcg-startup/psc", NULL, NULL};
-            if (arguman != NULL) {
-                psc_args[1] = arguman;
+            if (argv[1] != NULL) {
+                psc_args[1] = argv[1];
                 psc_args[2] = NULL;
             }
             pid_t psc_pid = fork();
@@ -220,7 +226,7 @@ int main(void) {
                 perror("fork basarisiz");
             }
         }
-        else if (strcmp(komut, "2048") == 0) {
+        else if (strcmp(argv[0], "2048") == 0) {
             pid_t two_pid = fork();
             if (two_pid == 0) {
                 setenv("TERMINFO", "/usr/lib/terminfo", 1);
@@ -234,7 +240,7 @@ int main(void) {
                 printf("fork hatasi!\n");
             }
         }
-        else if (strcmp(komut, "grafik") == 0) {
+        else if (strcmp(argv[0], "grafik") == 0) {
             pid_t tri_pid = fork();
             if (tri_pid == 0) {
                 char *args[] = {"/bin/grafik", NULL};
@@ -245,7 +251,7 @@ int main(void) {
                 printf("fork hatasi!\n");
             }
         }
-        else if (strcmp(komut, "karabas") == 0) {
+        else if (strcmp(argv[0], "karabas") == 0) {
             struct dirent **namelist;
             int n = scandir("/dev/pcgconfigs", &namelist, NULL, alphasort);
             if (n < 0) {
@@ -316,7 +322,7 @@ int main(void) {
             }
             free(namelist);
         }
-        else if (strcmp(komut, "yardim") == 0) {
+        else if (strcmp(argv[0], "yardim") == 0) {
             printf("\nKomutlar:\n");
             printf("  pati     = Supriz komutu\n");
             printf("  uname    = Sistem bilgisi\n");
@@ -330,10 +336,31 @@ int main(void) {
             printf("  miyav = miyav <adres> (ping)\n");
             printf("  libreturks  = ahem...\n");
             printf("  touch = dosya olusturur\n");
+            printf("  patifetch = sistem bilgisi\n");
             printf("  cikis    = Sistemi kapat\n\n");
         }
+        else if (strcmp(argv[0], "patifetch") == 0) {
+            pid_t fetch_pid = fork();
+            if (fetch_pid == 0) {
+                char *args[] = {"/bin/patifetch", NULL};
+                execv("/bin/patifetch", args);
+                perror("pati-fetch baslatilmadi");
+                exit(EXIT_FAILURE);
+            } else if (fetch_pid > 0) {
+                wait(NULL);
+            } else {
+                perror("fork basarisiz");
+            }
+        }
         else {
-            printf("Komut bulunamadi, bi' yardim komutuna bak...\n");
+            pid_t pid = fork();
+            if (pid == 0) {
+                execvp(argv[0], argv);
+                printf("%s komutu bulunamadi, bi' yardim komutuna bak istersen..\n", argv[0]);
+                exit(127);
+            } else if (pid > 0) {
+                wait(NULL);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 
-# NOTE: If you want to make your own Pati Based OS, use this repository: (KedyBox)[https://github.com/mehmetdemir-tr/KedyBox]
+# NOTE: If you want to make your own Pati Based OS, use this repository: [KedyBox](https://github.com/mehmetdemir-tr/KedyBox)
 
 # Pati Mobile OS
 

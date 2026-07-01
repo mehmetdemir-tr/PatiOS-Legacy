@@ -21,10 +21,34 @@
 #include "mauvyd-headers/mauvyd.h"
 #include "mauvyd-headers/pcg.h"
 
+
+static int term_cols(void) {
+    struct winsize w;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0 && w.ws_col > 0)
+        return w.ws_col;
+    return 80;
+}
+
+static void log_status(const char *msg, int ok) {
+    int cols = term_cols();
+    int pad = cols - (int)strlen(msg) - 6;
+    if (pad < 1) pad = 1;
+
+    printf("%s", msg);
+    for (int i = 0; i < pad; i++) putchar(' ');
+
+    if (ok)
+        printf("[ \033[0;32mOK\033[0m ]\n");
+    else
+        printf("[\033[0;31mFAIL\033[0m]\n");
+    fflush(stdout);
+    usleep(80000);
+}
+
 #define CONFIG_DIR "/dev/pcgconfigs"
 #define DEFAULT_PATH "/bin:/pcg-startup:/usr/bin:/lib/paticommands"
 #define HOSTNAME "pati@mobile"
-#define OS_NAME "PatiOS - Yeni nesil mobil isletim sistemi"
+#define OS_NAME "PatiOS - Yeni nesil mobil işletim sistemi"
 
 Service service_table[MAX_SERVICES];
 int service_count = 0;
@@ -38,6 +62,79 @@ void spawn_service(int idx);
 void resolve_and_start(int idx);
 void start_services(struct dirent **namelist, int n);
 void sync_paticommands(void);
+
+static void boot_screen(void) {
+    printf("\e[H\e[J");
+    printf("\033[H\033[J");
+
+    printf("DateTime 0:19:35 ??-??-????\n");
+    printf("ACPI: PCI Root Bridge Initialized (state 0000 00ff100)\n");
+    printf("Environment: authorization=\"https://api.güvenligelecek.org\", authHost=\"api.güvenligelecek.org\"\n");
+    printf("Starting 1 thread(s)\n\n");
+    fflush(stdout);
+    usleep(150000);
+
+    log_status("Setting clock (utc):", 1);
+    log_status("Starting udev:", 1);
+    printf("1 devices found\n");
+    log_status("Setting up dispsclslv", 1);
+    log_status("Setting up trdtil", 1);
+    log_status("Started Apply Kernel Variables", 1);
+    log_status("Started Kernel Device Manager", 1);
+    log_status("Started Namespace Registration Service", 1);
+    printf("Searching for additional items\n");
+    log_status("Started initramfs", 1);
+    log_status("Started SecurityService", 1);
+    log_status("Reached target Local File Systems", 1);
+    printf("\n");
+
+    printf("Started File System Check on /dev/disk/uuid/63ec8ac1-9f66-44c8\n");
+    printf("Started File System Check on /dev/disk/uuid/a44ed7db-39c9-44a3\n");
+    log_status("File System Check Validated", 1);
+    printf("\n");
+
+    log_status("Mounting procfs", 1);
+    mkdir("/proc", 0755);
+    mount("proc", "/proc", "proc", 0, NULL);
+    log_status("Mounting sysfs", 1);
+    mount("sysfs", "/sys", "sysfs", 0, NULL);
+    printf("\n");
+
+    mkdir("/data", 0755);
+    mkdir("/data/paticommands", 0755);
+    int ret = mount("/dev/vda1", "/data", "ext4", 0, NULL);
+    if (ret == 0) {
+        log_status("Mounting persistent storage", 1);
+        sync_paticommands();
+    } else if (errno == EBUSY) {
+        log_status("Mounting persistent storage", 1);
+    } else {
+        log_status("Mounting persistent storage", 0);
+    }
+    putenv("PATH=" DEFAULT_PATH);
+
+    mkdir("/dev/imeidata/efs_current", 0755);
+    mkdir("/dev/imeidata/efs_backup", 0755);
+    if (mount("/dev/vda2", "/dev/imeidata/efs_current", "ext4", 0, NULL) == 0)
+        log_status("Mounting EFS active storage", 1);
+    else
+        log_status("Mounting EFS active storage", 0);
+    if (mount("/dev/vda3", "/dev/imeidata/efs_backup", "ext4", MS_RDONLY, NULL) == 0)
+        log_status("Mounting EFS backup storage (ro)", 1);
+    else
+        log_status("Mounting EFS backup storage (ro)", 0);
+    printf("\n");
+
+    putenv("TERM=linux");
+    sethostname(HOSTNAME, strlen(HOSTNAME));
+
+    printf("Pati-2.1 by Mehmet Demir. Kod adi: Ananas (Pineapple)\n");
+    printf("----------------------------------------\n");
+    printf("----- MAUVYD Configuration System -----\n");
+    printf("----------------------------------------\n\n");
+    fflush(stdout);
+    usleep(150000);
+}
 
 void setup_network() {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -438,42 +535,7 @@ int main() {
     struct dirent **namelist;
     int n = scandir(CONFIG_DIR, &namelist, NULL, alphasort);
 
-    printf("----------------------------------------\n");
-    printf("----- MAUVYD Configuration System -----\n");
-    printf("-------------Mounting FS..--------------\n");
-
-    mount("proc", "/proc", "proc", 0, NULL);
-    mount("sysfs", "/sys", "sysfs", 0, NULL);
-
-    mkdir("/data", 0755);
-    mkdir("/data/paticommands", 0755);
-    int ret = mount("/dev/vda1", "/data", "ext4", 0, NULL);
-    if (ret == 0) {
-        printf("[TAMAM]: Kalıcı depolama aktif.\n");
-        sync_paticommands();
-        putenv("PATH=" DEFAULT_PATH);
-    } else if (errno == EBUSY) {
-        printf("[BILGI]: Depolama zaten bağlı.\n");
-        putenv("PATH=" DEFAULT_PATH);
-    } else {
-        perror("[HATA]: Disk bağlanamadı");
-        putenv("PATH=" DEFAULT_PATH);
-    }
-
-    mkdir("/dev/imeidata/efs_current", 0755);
-    mkdir("/dev/imeidata/efs_backup", 0755);
-    if (mount("/dev/vda2", "/dev/imeidata/efs_current", "ext4", 0, NULL) == 0)
-        printf("[TAMAM]: EFS aktif deposu bağlandı.\n");
-    else
-        perror("[HATA]: EFS aktif depo bağlanamadı");
-    if (mount("/dev/vda3", "/dev/imeidata/efs_backup", "ext4", MS_RDONLY, NULL) == 0)
-        printf("[TAMAM]: EFS yedek deposu aktif (read-only).\n");
-    else
-        perror("[HATA]: EFS yedek depo bağlanamadı");
-
-    putenv("TERM=linux");
-    sethostname(HOSTNAME, strlen(HOSTNAME));
-    printf("Pati-2.1 by Mehmet Demir. Kod adi: Ananas (Pineapple)\n");
+    boot_screen();
 
     setup_network();
 

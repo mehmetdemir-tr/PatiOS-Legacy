@@ -24,7 +24,7 @@
 #define CONFIG_DIR "/dev/pcgconfigs"
 #define DEFAULT_PATH "/bin:/pcg-startup:/usr/bin:/lib/paticommands"
 #define HOSTNAME "pati@mobile"
-#define OS_NAME "PatiOS - Yeni nesil mobil işletim sistemi"
+#define OS_NAME "PatiOS - Yeni nesil mobil isletim sistemi"
 
 Service service_table[MAX_SERVICES];
 int service_count = 0;
@@ -135,39 +135,179 @@ void sigchld_handler(int sig) {
 void* start_control_socket(void* arg) {
     (void)arg;
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) return NULL;
+
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, "/run/mauvyd.sock", sizeof(addr.sun_path) - 1);
+    addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
+
     unlink("/run/mauvyd.sock");
     mkdir("/run", 0755);
+
     if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) return NULL;
     listen(fd, 5);
+
     while (1) {
         int client = accept(fd, NULL, NULL);
         if (client < 0) continue;
+
         char buf[256] = {0};
-        read(client, buf, sizeof(buf) - 1);
-        if (strncmp(buf, "status", 6) == 0) {
+        ssize_t n = read(client, buf, sizeof(buf) - 1);
+        if (n <= 0) { close(client); continue; }
+        buf[n] = '\0';
+        if (buf[n-1] == '\n') buf[n-1] = '\0';
+
+        if (strcmp(buf, "status") == 0) {
             for (int i = 0; i < service_count; i++) {
                 char line[512];
-                int alive = (kill(service_table[i].pid, 0) == 0);
-                snprintf(line, sizeof(line), "%s: %s (pid %d)\n",
-                    service_table[i].location, alive ? "running" : "dead", service_table[i].pid);
+                int alive = (service_table[i].pid > 0 && kill(service_table[i].pid, 0) == 0);
+                snprintf(line, sizeof(line), "%s (%s): %s (pid %d) restart=%s\n",
+                    service_table[i].name,
+                    service_table[i].location,
+                    alive ? "running" : "dead",
+                    service_table[i].pid,
+                    service_table[i].restart ? "on" : "off");
                 write(client, line, strlen(line));
             }
+
+        } else if (strncmp(buf, "start ", 6) == 0) {
+            char *name = buf + 6;
+            if (*name == '\0') {
+                write(client, "Error: service name required.\n", 30);
+                close(client); continue;
+            }
+            int idx = -1;
+            for (int i = 0; i < service_count; i++)
+                if (strcmp(service_table[i].name, name) == 0) { idx = i; break; }
+            if (idx < 0) {
+                char resp[512]; snprintf(resp, sizeof(resp), "Service '%s' not found.\n", name);
+                write(client, resp, strlen(resp));
+            } else if (service_table[idx].pid > 0 && kill(service_table[idx].pid, 0) == 0) {
+                char resp[512]; snprintf(resp, sizeof(resp), "%s is already running (pid %d).\n", name, service_table[idx].pid);
+                write(client, resp, strlen(resp));
+            } else {
+                spawn_service(idx);
+                char resp[512]; snprintf(resp, sizeof(resp), "Starting %s (pid %d)...\n", name, service_table[idx].pid);
+                write(client, resp, strlen(resp));
+            }
+
         } else if (strncmp(buf, "stop ", 5) == 0) {
             char *name = buf + 5;
+            if (*name == '\0') {
+                write(client, "Error: service name required.\n", 30);
+                close(client); continue;
+            }
             int found = 0;
             for (int i = 0; i < service_count; i++) {
-                if (strstr(service_table[i].location, name)) {
-                    kill(service_table[i].pid, SIGTERM);
-                    write(client, "Stopping service...\n", 20);
-                    found = 1;
+                if (strcmp(service_table[i].name, name) == 0) {
+                    if (service_table[i].pid > 0) {
+                        kill(service_table[i].pid, SIGTERM);
+                        service_table[i].pid = 0;
+                    }
+                    char resp[512]; snprintf(resp, sizeof(resp), "Stopping %s..\n", name);
+                    write(client, resp, strlen(resp));
+                    found = 1; break;
                 }
             }
-            if (!found) write(client, "Service not found.\n", 19);
+            if (!found) {
+                char resp[512]; snprintf(resp, sizeof(resp), "Service '%s' not found.\n", name);
+                write(client, resp, strlen(resp));
+            }
+
+        } else if (strncmp(buf, "restart ", 9) == 0) {
+            char *name = buf + 9;
+            if (*name == '\0') {
+                write(client, "Error: service name required.\n", 30);
+                close(client); continue;
+            }
+            int idx = -1;
+            for (int i = 0; i < service_count; i++)
+                if (strcmp(service_table[i].name, name) == 0) { idx = i; break; }
+            if (idx < 0) {
+                char resp[512]; snprintf(resp, sizeof(resp), "Service '%s' not found.\n", name);
+                write(client, resp, strlen(resp));
+            } else {
+                if (service_table[idx].pid > 0) {
+                    kill(service_table[idx].pid, SIGTERM);
+                    usleep(100000);
+                }
+                spawn_service(idx);
+                char resp[512]; snprintf(resp, sizeof(resp), "Restarting %s (pid %d)...\n", name, service_table[idx].pid);
+                write(client, resp, strlen(resp));
+            }
+
+        } else if (strncmp(buf, "log ", 4) == 0) {
+            char *name = buf + 4;
+            if (*name == '\0') {
+                write(client, "Error: service name required.\n", 30);
+                close(client); continue;
+            }
+            char logpath[256];
+            snprintf(logpath, sizeof(logpath), "/tmp/%s.log", name);
+            FILE *lf = fopen(logpath, "r");
+            if (!lf) {
+                char resp[512]; snprintf(resp, sizeof(resp), "No log file for '%s'.\n", name);
+                write(client, resp, strlen(resp));
+            } else {
+                char lbuf[4096];
+                size_t r;
+                while ((r = fread(lbuf, 1, sizeof(lbuf), lf)) > 0)
+                    write(client, lbuf, r);
+                fclose(lf);
+            }
+
+        } else if (strncmp(buf, "enable ", 7) == 0) {
+            char *name = buf + 7;
+            if (*name == '\0') {
+                write(client, "Error: service name required.\n", 30);
+                close(client); continue;
+            }
+            int found = 0;
+            for (int i = 0; i < service_count; i++) {
+                if (strcmp(service_table[i].name, name) == 0) {
+                    service_table[i].restart = 1;
+                    char cfgpath[512];
+                    snprintf(cfgpath, sizeof(cfgpath), "%s/%s.pcg", CONFIG_DIR, name);
+                    pcg_write(cfgpath, "restart", "1");
+                    char resp[512]; snprintf(resp, sizeof(resp), "Enabled auto-restart for %s.\n", name);
+                    write(client, resp, strlen(resp));
+                    found = 1; break;
+                }
+            }
+            if (!found) {
+                char resp[512]; snprintf(resp, sizeof(resp), "Service '%s' not found.\n", name);
+                write(client, resp, strlen(resp));
+            }
+
+        } else if (strncmp(buf, "disable ", 8) == 0) {
+            char *name = buf + 8;
+            if (*name == '\0') {
+                write(client, "Error: service name required.\n", 30);
+                close(client); continue;
+            }
+            int found = 0;
+            for (int i = 0; i < service_count; i++) {
+                if (strcmp(service_table[i].name, name) == 0) {
+                    service_table[i].restart = 0;
+                    char cfgpath[512];
+                    snprintf(cfgpath, sizeof(cfgpath), "%s/%s.pcg", CONFIG_DIR, name);
+                    pcg_write(cfgpath, "restart", "0");
+                    char resp[512]; snprintf(resp, sizeof(resp), "Disabled auto-restart for %s.\n", name);
+                    write(client, resp, strlen(resp));
+                    found = 1; break;
+                }
+            }
+            if (!found) {
+                char resp[512]; snprintf(resp, sizeof(resp), "Service '%s' not found.\n", name);
+                write(client, resp, strlen(resp));
+            }
+
+        } else {
+            write(client, "Available: status, start <s>, stop <s>, restart <s>, log <s>, enable <s>, disable <s>\n", 83);
         }
+
         close(client);
     }
     return NULL;
@@ -185,11 +325,11 @@ void start_services(struct dirent **namelist, int n) {
         if (dot) *dot = '\0';
         char fulldst[512];
         snprintf(fulldst, sizeof(fulldst), "%s/%s", CONFIG_DIR, entry->d_name);
-        char location[256] = {0}, wait_str[16] = {0}, izle_str[16] = {0};
+        char location[256] = {0}, wait_str[16] = {0}, watch_str[16] = {0};
         char args_str[512] = {0}, depends_str[256] = {0}, restart_str[16] = {0};
-        pcg_read(fulldst, "konumu", location, sizeof(location));
-        pcg_read(fulldst, "bekle", wait_str, sizeof(wait_str));
-        pcg_read(fulldst, "izle", izle_str, sizeof(izle_str));
+        pcg_read(fulldst, "location", location, sizeof(location));
+        pcg_read(fulldst, "wait", wait_str, sizeof(wait_str));
+        pcg_read(fulldst, "watch", watch_str, sizeof(watch_str));
         pcg_read(fulldst, "args", args_str, sizeof(args_str));
         pcg_read(fulldst, "depends", depends_str, sizeof(depends_str));
         pcg_read(fulldst, "restart", restart_str, sizeof(restart_str));
@@ -203,8 +343,8 @@ void start_services(struct dirent **namelist, int n) {
         service_table[service_count].restart = (strcmp(restart_str, "1") == 0);
         service_table[service_count].visit_state = STATE_UNVISITED;
         service_count++;
-        if (strcmp(izle_str, "1") == 0)
-            printf("[INFO] %s Karabas tarafindan izlenecek.\n", location);
+        if (strcmp(watch_str, "1") == 0)
+            printf("[INFO] %s Karabaş tarafından izlenecek.\n", location);
         free(namelist[i]);
     }
     sigemptyset(&block_mask);
@@ -221,9 +361,9 @@ void spawn_service(int idx) {
         sigprocmask(SIG_SETMASK, &old_mask, NULL);
         char fulldst[512];
         snprintf(fulldst, sizeof(fulldst), "%s/%s.pcg", CONFIG_DIR, service_table[idx].name);
-        char izle_str[16] = {0};
-        pcg_read(fulldst, "izle", izle_str, sizeof(izle_str));
-        if (strcmp(izle_str, "1") != 0) {
+        char watch_str[16] = {0};
+        pcg_read(fulldst, "watch", watch_str, sizeof(watch_str));
+        if (strcmp(watch_str, "1") != 0) {
             char logpath[256];
             snprintf(logpath, sizeof(logpath), "/tmp/%s.log", service_table[idx].name);
             int logfd = open(logpath, O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -249,7 +389,7 @@ void spawn_service(int idx) {
         char fulldst[512];
         snprintf(fulldst, sizeof(fulldst), "%s/%s.pcg", CONFIG_DIR, service_table[idx].name);
         char wait_str[16] = {0};
-        pcg_read(fulldst, "bekle", wait_str, sizeof(wait_str));
+        pcg_read(fulldst, "wait", wait_str, sizeof(wait_str));
         if (strcmp(wait_str, "1") == 0) {
             int status;
             waitpid(pid, &status, 0);
@@ -309,31 +449,30 @@ int main() {
     mkdir("/data/paticommands", 0755);
     int ret = mount("/dev/vda1", "/data", "ext4", 0, NULL);
     if (ret == 0) {
-        printf("[TAMAM]: Kalici depolama aktif.\n");
+        printf("[TAMAM]: Kalıcı depolama aktif.\n");
         sync_paticommands();
         putenv("PATH=" DEFAULT_PATH);
     } else if (errno == EBUSY) {
-        printf("[BILGI]: Depolama zaten bagli.\n");
+        printf("[BILGI]: Depolama zaten bağlı.\n");
         putenv("PATH=" DEFAULT_PATH);
     } else {
-        perror("[HATA]: Disk baglanamadi");
+        perror("[HATA]: Disk bağlanamadı");
         putenv("PATH=" DEFAULT_PATH);
     }
 
     mkdir("/dev/imeidata/efs_current", 0755);
     mkdir("/dev/imeidata/efs_backup", 0755);
     if (mount("/dev/vda2", "/dev/imeidata/efs_current", "ext4", 0, NULL) == 0)
-        printf("[TAMAM]: EFS aktif deposu baglandi.\n");
+        printf("[TAMAM]: EFS aktif deposu bağlandı.\n");
     else
-        perror("[HATA]: EFS aktif depo baglanamadi");
+        perror("[HATA]: EFS aktif depo bağlanamadı");
     if (mount("/dev/vda3", "/dev/imeidata/efs_backup", "ext4", MS_RDONLY, NULL) == 0)
         printf("[TAMAM]: EFS yedek deposu aktif (read-only).\n");
     else
-        perror("[HATA]: EFS yedek depo baglanamadi");
+        perror("[HATA]: EFS yedek depo bağlanamadı");
 
     putenv("TERM=linux");
     sethostname(HOSTNAME, strlen(HOSTNAME));
-    printf("\nYAHNI OLAN VARMI?\n");
     printf("Pati-2.1 by Mehmet Demir. Kod adi: Ananas (Pineapple)\n");
 
     setup_network();
@@ -354,18 +493,7 @@ int main() {
     }
 
     while (1) {
-        pid_t shell_pid = fork();
-        if (shell_pid == 0) {
-            char *shell_args[] = {"/bin/shell", NULL};
-            execv("/bin/shell", shell_args);
-            exit(1);
-        } else if (shell_pid > 0) {
-            int status;
-            waitpid(shell_pid, &status, 0);
-            sleep(1);
-        } else {
-            sleep(2);
-        }
+        pause();
     }
     return 0;
 }

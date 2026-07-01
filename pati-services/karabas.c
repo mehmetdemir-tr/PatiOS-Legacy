@@ -41,14 +41,16 @@ int main() {
 
             while (fgets(dosya, sizeof(dosya), pcgfile) != NULL) {
                 char kopya[256];
-                strncpy(kopya, dosya);
+                strncpy(kopya, dosya, sizeof(kopya) - 1);
+                kopya[sizeof(kopya) - 1] = '\0';
                 char *okuyucu = strtok(kopya, " =\n");
                 if (okuyucu == NULL) continue;
 
                 if (strcmp(okuyucu, "konumu") == 0) {
                     char *gecici = strtok(NULL, " =\n");
                     if (gecici != NULL) {
-                        strncpy(dosyayolu, gecici);
+                        strncpy(dosyayolu, gecici, sizeof(dosyayolu) - 1);
+                        dosyayolu[sizeof(dosyayolu) - 1] = '\0';
                         args[0] = dosyayolu;
                     }
                 }

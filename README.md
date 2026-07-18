@@ -1,4 +1,4 @@
-# PatiOS-Embedded
+# PatiOS-Core
 
 [![Language: C](https://img.shields.io/badge/Language-C-A8B9CC.svg)](https://ibm.com)
 [![AI Assisted](https://img.shields.io/badge/AI_Assisted-orange)](#)

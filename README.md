@@ -15,7 +15,7 @@
 PatiOS-Core, Debian/Ubuntu gibi hazır dağıtım tabanlarını kullanmaz. Tamamen ham çekirdek üzerine inşa edilen kök dosya sistemi (rootfs) ve kullanıcı alanı (user-space) araçlarından oluşur:
 
 * **Sıfır Bağımlılık (Standalone User-Space):** Sistem, harici ağır paket yığınlarına veya yorumlayıcılara (Python vb.) ihtiyaç duymadan doğrudan saf C ikilileri (binary) ile çalışır.
-* **Karabaş Servisi (`pati-services`):** Arka planda kritik sistem süreçlerini, bellek sızıntılarını ve proses durumlarını mikroskobik düzeyde izleyen, tamamen C ile yazılmış yerli proses takip (init/daemon) mekanizmasıdır.
+* **Karabaş Servisi (`pati-services`):** Arka planda kritik sistem süreçlerini, bellek sızıntılarını ve proses durumlarını mikroskobik düzeyde izleyen, tamamen C ile yazılmış proses takip komutudur.
 * **Gelişmiş İzole Kabuk (`shell.c`):** Üçüncü parti kabuk bileşenlerine bağımlı kalmadan, sistemin en alt katmanıyla doğrudan donanım seviyesinde haberleşen, hafif ve güvenli komut satırı arayüzüdür.
 * **Musl-libc Optimizasyonu:** `aarch64-linux-musl-gcc` zinciri hedeflenerek derlenmiştir. Bu sayede standart `glibc` kütüphanelerine kıyasla bellek taşması (buffer overflow) gibi siber güvenlik zafiyetlerine karşı doğal koruma ve ultra hafif binary boyutu sağlar.
 

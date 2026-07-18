@@ -6,7 +6,7 @@
 **PatiOS-Embedded**, gömülü sistemler, siber güvenlik altyapıları ve bağımsız mobil platformlar için Linux Çekirdeği (Kernel) mimarisi üzerine **sıfırdan (from scratch)** inşa edilmiş, %100 saf C tabanlı bağımsız bir Linux dağıtım çatısıdır. 
 
 * **Geliştirme Motoru:** Kendi özel dağıtımınızı derlemek ve genişletmek için çevreleyici ekosistem aracı olan **[KedyBox](https://github.com/mehmetdemir-tr/KedyBox)** reposunu kullanabilirsiniz.
-* **Kod Adı:** `pineapple-ananas`
+* **Kod Adı:** `watermelon-karpuz`
 
 ---
 

@@ -1,56 +1,82 @@
+# PatiOS-Embedded
 
-# NOTE: If you want to make your own Pati Based OS, use this repository: [KedyBox](https://github.com/mehmetdemir-tr/KedyBox)
-## This version is Legacy and still open to contribute.
-# Pati Mobile OS
+[![Language: C](https://img.shields.io/badge/Language-C-A8B9CC.svg)](https://ibm.com)
+[![License: MIT](https://shields.io)](https://opensource.org)
+[![Toolchain: Musl-libc](https://shields.io)](https://libc.org)
+[![Security: Static-Linked](https://shields.io)](#)
+[![AI Assisted: Claude Protocol](https://img.shields.io/badge/AI_Assisted-Claude_Protocol-orange)](#)
 
-**PatiOS**, Linux Çekirdeği (Kernel) tabanlı olarak geliştirilen deneysel bir mobil işletim sistemi projesidir.
-**Kod Adı:** `pineapple-ananas`
+**PatiOS-Embedded**, gömülü sistemler, siber güvenlik altyapıları ve bağımsız mobil platformlar için Linux Çekirdeği (Kernel) mimarisi üzerine **sıfırdan (from scratch)** inşa edilmiş, %100 saf C tabanlı bağımsız bir Linux dağıtım çatısıdır. 
 
-## Öne Çıkan Özellikler
-*   **Karabaş Servisi:** `pati-services` bünyesinde çalışan özel proses izleme servisi.
-*   **Özel Kabuk (Shell):** Sisteme özel komutlarla donatılmış `shell.c` kabuğu.
-*   **Linux Gücü:** Linux Kernel'in sağlam ve güvenilir altyapısı üzerine inşa edilmiştir.
-
-## Proje İçeriği
-*   `shell.c`: İşletim sistemi kabuğu ve komut yönetimi.
-*   `mauvyd.c`: Temel sistem dosyası.
-*   `pati-services/`: Karabaş gibi sistem servislerinin bulunduğu dizin.
-*   `Kernel Dosyası`: Projenin yayınlanmış çekirdek dosyaları.
-
-## Katkıda Bulunma
-Projeye katkı sağlamak isterseniz, lütfen **Issues** sekmesi üzerinden yeni bir konu açın.
-
-**Geliştirme Notu:** Bu proje, öğrenme odaklı bir protokolle geliştirilmektedir. Yapay zeka yardımı alınırken doğrudan kod kopyalamak yerine, terim araştırması ve mantık sorgulama yöntemi tercih edilmektedir.
-
-## Lisans
-Bu proje **GPL v3** lisansı ile yayınlanmıştır.
-*   Yapılan tüm katkılar bu lisans altında olmalıdır.
-*   Proje kapalı kaynak kodlu hale getirilemez.
-
-### FORK!
-[![Selam](https://github.com/mehmetdemir-tr/Pati/blob/main/fork.png)](https://github.com/mehmetdemir-tr/Pati/blob/8bd59d9685159772e44c2c7908655ed7d09d18a9/screenshots/fork.png)
+* **Geliştirme Motoru:** Kendi özel dağıtımınızı derlemek ve genişletmek için çevreleyici ekosistem aracı olan **[KedyBox](https://github.com/mehmetdemir-tr/KedyBox)** reposunu kullanabilirsiniz.
+* **Kod Adı:** `pineapple-ananas`
 
 ---
-*Geliştirici: [mehmetdemir-tr](https://github.com/mehmetdemir-tr)*.
+
+## Teknik Mimari ve Öne Çıkan Özellikler
+
+PatiOS-Embedded, Debian/Ubuntu gibi hazır dağıtım tabanlarını kullanmaz. Tamamen ham çekirdek üzerine inşa edilen kök dosya sistemi (rootfs) ve kullanıcı alanı (user-space) araçlarından oluşur:
+
+* **Sıfır Bağımlılık (Standalone User-Space):** Sistem, harici ağır paket yığınlarına veya yorumlayıcılara (Python vb.) ihtiyaç duymadan doğrudan saf C ikilileri (binary) ile çalışır.
+* **Karabaş Servisi (`pati-services`):** Arka planda kritik sistem süreçlerini, bellek sızıntılarını ve proses durumlarını mikroskobik düzeyde izleyen, tamamen C ile yazılmış yerli proses takip (init/daemon) mekanizmasıdır.
+* **Gelişmiş İzole Kabuk (`shell.c`):** Üçüncü parti kabuk bileşenlerine bağımlı kalmadan, sistemin en alt katmanıyla doğrudan donanım seviyesinde haberleşen, hafif ve güvenli komut satırı arayüzüdür.
+* **Musl-libc Optimizasyonu:** `aarch64-linux-musl-gcc` zinciri hedeflenerek derlenmiştir. Bu sayede standart `glibc` kütüphanelerine kıyasla bellek taşması (buffer overflow) gibi siber güvenlik zafiyetlerine karşı doğal koruma ve ultra hafif binary boyutu sağlar.
+
 ---
-## Ekran Görüntüleri:
-![Pati Shell](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/genel.jpeg)
 
-*Pati Shell — Ana kabuk arayüzü*
+## Proje İçeriği ve Dosya Yapısı
 
-![Yardım](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/yardim.jpeg)
+* `shell.c` : İşletim sistemi ana kabuğu, kullanıcı etkileşimi ve alt komut yönetim mimarisi.
+* `mauvyd.c` : Çekirdek başlangıcından sonra devreye giren temel sistem yönetim dosyası.
+* `pati-services/` : `karabaş` gibi kritik arka plan servislerinin ve sistem daemonlarının kaynak kodları.
+* `Kernel Yapılandırması` : ARM64 ve Raspberry Pi mimarileri için optimize edilmiş minimal, sertleştirilmiş çekirdek dosyaları.
 
-*`yardim` komutu — Tüm yerleşik komutlar*
+---
 
-![Patifetch](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/patifetch.jpeg)
+## 🚀 Dağıtım Kurulumu ve Hedef Platformlar
 
-*`patifetch` — Sistem bilgi aracı*
+### Desteklenen Donanımlar
+* Raspberry Pi 3 / 4 / 5 (ARM64)
+* QEMU (Sanallaştırma ortamları)
+* WSL (Windows Subsystem for Linux) ve Yerel Linux Dağıtımları
 
-![Patifetch](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/mamakabi.jpeg)
+### Canlı Kurulum Protokolü (Raspberry Pi 3/4/5)
+1. SD kartınızı **MBR** düzeniyle bölümlendirin ve minimum **512MB FAT32** alanı oluşturun.
+2. [Raspberry Pi Firmware](https://github.com) reposundan `boot` klasör içeriğini bu bölüme taşıyın.
+3. KedyBox ile derlediğiniz `initramfs` dosyasının adını `initramfs.gz` yaparak FAT32 bölümüne yükleyin.
+4. `cmdline.txt` dosyasını oluşturup şu parametreleri ekleyin:  
+   `console=serial0,115200 console=tty1 rdinit=/init`
+5. `config.txt` dosyasını oluşturup sistemi şu optimize parametrelerle yapılandırın:
+   ```text
+   display_auto_detect=1
+   initramfs initramfs.gz followkernel
+   disable_fw_kms_setup=1
+   arm_64bit=1
+   arm_boost=1
+   ```
 
-*`mamakabi` — RAM bilgisi*
+---
 
+## Sistem Ekran Görüntüleri
 
+![Pati Shell](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/genel.jpeg)  
+*Pati Shell — İşletim sisteminin bağımsız, saf C ile yazılmış ana kabuk arayüzü.*
 
-## Rozetler
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)![Language: C](https://img.shields.io/badge/Language-C-A8B9CC.svg)![GitHub release (latest by date)](https://img.shields.io/github/v/release/mehmetdemir-tr/Pati)![GitHub stars](https://img.shields.io/github/stars/mehmetdemir-tr/Pati?style=social)![GitHub forks](https://img.shields.io/github/forks/mehmetdemir-tr/Pati?style=social) ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/mehmetdemir-tr/Pati) ![AI Assisted: Claude Protocol](https://img.shields.io/badge/AI_Assisted-Claude_Protocol-orange)
+![Yardım](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/yardim.jpeg)  
+*`yardim` komutu — Donanıma doğrudan erişen tüm yerleşik sistem komutları.*
+
+![Patifetch](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/patifetch.jpeg)  
+*`patifetch` — Çekirdek seviyesinden dinamik veri çeken sistem bilgi aracı.*
+
+---
+
+## Lisans ve Katkıda Bulunma
+
+Bu proje **MIT** lisansı ile yayınlanmaktadır. 
+* Projenin tüm telif hakları açık kalmak kaydıyla, ticari ve kurumsal projelerde kapatılarak veya entegre edilerek kullanılması tamamen serbesttir.
+* Projeye katkı sağlamak, hata bildirmek veya siber güvenlik yaması eklemek için lütfen **Issues** sekmesi üzerinden yeni bir konu açın.
+
+**Geliştirme Notu:** Bu proje, araştırma ve derin mühendislik odaklı bir protokolle geliştirilmektedir. Yapay zeka yardımı alınırken doğrudan kod kopyalamak yerine, işletim sistemi teorisi, terim araştırması ve alt seviye mantık sorgulama yöntemi tercih edilmektedir.
+
+---
+*Geliştirici: [mehmetdemir-tr](https://github.com/mehmetdemir-tr)*

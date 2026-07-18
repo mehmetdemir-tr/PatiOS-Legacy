@@ -3,7 +3,7 @@
 [![Language: C](https://img.shields.io/badge/Language-C-A8B9CC.svg)](https://ibm.com)
 [![AI Assisted](https://img.shields.io/badge/AI_Assisted-orange)](#)
 
-**PatiOS-Embedded**, gömülü sistemler, siber güvenlik altyapıları ve bağımsız mobil platformlar için Linux Çekirdeği (Kernel) mimarisi üzerine **sıfırdan (from scratch)** inşa edilmiş, %100 saf C tabanlı bağımsız bir Linux dağıtım çatısıdır. 
+**PatiOS-Core**, gömülü sistemler, siber güvenlik altyapıları ve bağımsız mobil platformlar için Linux Çekirdeği (Kernel) mimarisi üzerine **sıfırdan (from scratch)** inşa edilmiş, %100 saf C tabanlı bağımsız bir Linux dağıtım çatısıdır. 
 
 * **Geliştirme Motoru:** Kendi özel dağıtımınızı derlemek ve genişletmek için çevreleyici ekosistem aracı olan **[KedyBox](https://github.com/mehmetdemir-tr/KedyBox)** reposunu kullanabilirsiniz.
 * **Kod Adı:** `watermelon-karpuz`
@@ -12,7 +12,7 @@
 
 ## Teknik Mimari ve Öne Çıkan Özellikler
 
-PatiOS-Embedded, Debian/Ubuntu gibi hazır dağıtım tabanlarını kullanmaz. Tamamen ham çekirdek üzerine inşa edilen kök dosya sistemi (rootfs) ve kullanıcı alanı (user-space) araçlarından oluşur:
+PatiOS-Core, Debian/Ubuntu gibi hazır dağıtım tabanlarını kullanmaz. Tamamen ham çekirdek üzerine inşa edilen kök dosya sistemi (rootfs) ve kullanıcı alanı (user-space) araçlarından oluşur:
 
 * **Sıfır Bağımlılık (Standalone User-Space):** Sistem, harici ağır paket yığınlarına veya yorumlayıcılara (Python vb.) ihtiyaç duymadan doğrudan saf C ikilileri (binary) ile çalışır.
 * **Karabaş Servisi (`pati-services`):** Arka planda kritik sistem süreçlerini, bellek sızıntılarını ve proses durumlarını mikroskobik düzeyde izleyen, tamamen C ile yazılmış yerli proses takip (init/daemon) mekanizmasıdır.
@@ -56,11 +56,11 @@ PatiOS-Embedded, Debian/Ubuntu gibi hazır dağıtım tabanlarını kullanmaz. T
 
 ## Sistem Ekran Görüntüleri
 
-![Pati Shell](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/genel.jpeg)  
-*Pati Shell — İşletim sisteminin bağımsız, saf C ile yazılmış ana kabuk arayüzü.*
+![Shell](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/genel.jpeg)  
+*Shell — İşletim sisteminin bağımsız, saf C ile yazılmış ana kabuk arayüzü.*
 
 ![Yardım](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/yardim.jpeg)  
-*`yardim` komutu — Donanıma doğrudan erişen tüm yerleşik sistem komutları.*
+*`yardım` komutu — Donanıma doğrudan erişen tüm yerleşik sistem komutları.*
 
 ![Patifetch](https://raw.githubusercontent.com/mehmetdemir-tr/Pati/main/screenshots/patifetch.jpeg)  
 *`patifetch` — Çekirdek seviyesinden dinamik veri çeken sistem bilgi aracı.*

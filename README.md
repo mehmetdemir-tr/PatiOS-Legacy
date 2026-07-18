@@ -1,8 +1,7 @@
 # PatiOS-Embedded
 
 [![Language: C](https://img.shields.io/badge/Language-C-A8B9CC.svg)](https://ibm.com)
-[![Security: Static-Linked](https://shields.io)](#)
-[![AI Assisted: Claude Protocol](https://img.shields.io/badge/AI_Assisted-orange)](#)
+[![AI Assisted](https://img.shields.io/badge/AI_Assisted-orange)](#)
 
 **PatiOS-Embedded**, gömülü sistemler, siber güvenlik altyapıları ve bağımsız mobil platformlar için Linux Çekirdeği (Kernel) mimarisi üzerine **sıfırdan (from scratch)** inşa edilmiş, %100 saf C tabanlı bağımsız bir Linux dağıtım çatısıdır. 
 

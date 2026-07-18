@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <sys/mount.h>
 #include <sys/ioctl.h>
+#include <termios.h>
 #include <fcntl.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -45,8 +46,8 @@ static void log_status(const char *msg, int ok) {
     usleep(80000);
 }
 
-#define CONFIG_DIR "/dev/pcgconfigs"
-#define DEFAULT_PATH "/bin:/pcg-startup:/usr/bin:/lib/paticommands"
+#define CONFIG_DIR "/etc/mauvyd"
+#define DEFAULT_PATH "/bin:/sbin:/usr/bin:/usr/sbin:/pcg-startup:/lib/paticommands"
 #define HOSTNAME "pati@mobile"
 #define OS_NAME "PatiOS - Yeni nesil mobil işletim sistemi"
 
@@ -67,7 +68,7 @@ static void boot_screen(void) {
     printf("\e[H\e[J");
     printf("\033[H\033[J");
 
-    printf("DateTime 0:19:35 ??-??-????\n");
+    printf("DateTime 0:19:35 \?\?-\?\?-\?\?\?\?\n");
     printf("ACPI: PCI Root Bridge Initialized (state 0000 00ff100)\n");
     printf("Environment: authorization=\"https://api.güvenligelecek.org\", authHost=\"api.güvenligelecek.org\"\n");
     printf("Starting 1 thread(s)\n\n");
@@ -93,11 +94,13 @@ static void boot_screen(void) {
     log_status("File System Check Validated", 1);
     printf("\n");
 
-    log_status("Mounting procfs", 1);
-    mkdir("/proc", 0755);
-    mount("proc", "/proc", "proc", 0, NULL);
-    log_status("Mounting sysfs", 1);
-    mount("sysfs", "/sys", "sysfs", 0, NULL);
+    int r_proc = mount("proc", "/proc", "proc", 0, NULL);
+    int e_proc = errno;
+    log_status("Mounting procfs", r_proc == 0 || e_proc == EBUSY);
+
+    int r_sys = mount("sysfs", "/sys", "sysfs", 0, NULL);
+    int e_sys = errno;
+    log_status("Mounting sysfs", r_sys == 0 || e_sys == EBUSY);
     printf("\n");
 
     mkdir("/data", 0755);
@@ -115,20 +118,19 @@ static void boot_screen(void) {
 
     mkdir("/dev/imeidata/efs_current", 0755);
     mkdir("/dev/imeidata/efs_backup", 0755);
-    if (mount("/dev/vda2", "/dev/imeidata/efs_current", "ext4", 0, NULL) == 0)
-        log_status("Mounting EFS active storage", 1);
-    else
-        log_status("Mounting EFS active storage", 0);
-    if (mount("/dev/vda3", "/dev/imeidata/efs_backup", "ext4", MS_RDONLY, NULL) == 0)
-        log_status("Mounting EFS backup storage (ro)", 1);
-    else
-        log_status("Mounting EFS backup storage (ro)", 0);
+    int r_efs1 = mount("/dev/vda2", "/dev/imeidata/efs_current", "ext4", 0, NULL);
+    int e_efs1 = errno;
+    log_status("Mounting EFS active storage", r_efs1 == 0 || e_efs1 == EBUSY);
+
+    int r_efs2 = mount("/dev/vda3", "/dev/imeidata/efs_backup", "ext4", MS_RDONLY, NULL);
+    int e_efs2 = errno;
+    log_status("Mounting EFS backup storage (ro)", r_efs2 == 0 || e_efs2 == EBUSY);
     printf("\n");
 
     putenv("TERM=linux");
     sethostname(HOSTNAME, strlen(HOSTNAME));
 
-    printf("Pati-2.1 by Mehmet Demir. Kod adi: Ananas (Pineapple)\n");
+    printf("Pati-2.6 by Mehmet Demir. Kod adı: Watermelon (Karpuz)\n");
     printf("----------------------------------------\n");
     printf("----- MAUVYD Configuration System -----\n");
     printf("----------------------------------------\n\n");
@@ -460,7 +462,18 @@ void spawn_service(int idx) {
         snprintf(fulldst, sizeof(fulldst), "%s/%s.pcg", CONFIG_DIR, service_table[idx].name);
         char watch_str[16] = {0};
         pcg_read(fulldst, "watch", watch_str, sizeof(watch_str));
-        if (strcmp(watch_str, "1") != 0) {
+        if (strcmp(watch_str, "1") == 0) {
+            setsid();
+            int ttyfd = open("/dev/ttyAMA0", O_RDWR | O_NOCTTY);
+            if (ttyfd < 0) ttyfd = open("/dev/console", O_RDWR | O_NOCTTY);
+            if (ttyfd >= 0) {
+                ioctl(ttyfd, TIOCSCTTY, 0);
+                dup2(ttyfd, STDIN_FILENO);
+                dup2(ttyfd, STDOUT_FILENO);
+                dup2(ttyfd, STDERR_FILENO);
+                if (ttyfd > 2) close(ttyfd);
+            }
+        } else {
             char logpath[256];
             snprintf(logpath, sizeof(logpath), "/tmp/%s.log", service_table[idx].name);
             int logfd = open(logpath, O_WRONLY | O_CREAT | O_APPEND, 0644);
